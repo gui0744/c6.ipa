@@ -21,7 +21,7 @@ jobs:
       - name: Build iOS App
         run: |
           xcodebuild \
-            -project ios/YellowDemo.xcodeproj \
+            -project YellowDemo.xcodeproj \
             -scheme YellowDemo \
             -configuration Release \
             -sdk iphoneos \
