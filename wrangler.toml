@@ -1,7 +1,0 @@
-name = "yellow-key-service"
-main = "worker.js"
-compatibility_date = "2026-10-01"
-
-[[kv_namespaces]]
-binding = "KEYS"
-id = "PASTE_YOUR_CLOUDFLARE_KV_NAMESPACE_ID_HERE"
