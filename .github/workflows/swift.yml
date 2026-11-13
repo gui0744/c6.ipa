@@ -16,7 +16,7 @@ jobs:
         run: brew install xcodegen
 
       - name: Generate Xcode project
-        run: cd ios && xcodegen generate
+        run: xcodegen generate
 
       - name: Build iOS App
         run: |
