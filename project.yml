@@ -10,10 +10,10 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: .
-        excludes:
-          - YellowDemo.xcodeproj
-          - Config.swift
+      - ContentView.swift
+      - YellowDemoApp.swift
+      - KeyService.swift
+      - Config.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: br.demo.yellow3105
