@@ -12,9 +12,9 @@ button,input,select,textarea{font:inherit}button{border:0;border-radius:11px;pad
 <body><main class="shell">
 <section id="login" class="panel login">
 <div class="brand">3105 Yellow • Admin</div><h1>Área administrativa</h1>
-<p class="muted">Entre com o endereço do servidor e seu token administrativo. O token fica somente nesta sessão do navegador.</p>
+<p class="muted">Entre com o endereço do servidor e sua KEY de acesso. A KEY fica somente nesta sessão do navegador.</p>
 <label>URL HTTPS do Worker</label><input id="base" type="url" placeholder="https://seu-worker.workers.dev">
-<label>Token administrativo</label><input id="token" type="password" autocomplete="current-password" placeholder="Token ADMIN_TOKEN">
+<label>KEY de acesso</label><input id="token" type="password" autocomplete="current-password" placeholder="Digite sua KEY">
 <div class="actions"><button onclick="connect()">Entrar no painel</button></div><pre id="loginMsg">Aguardando conexão.</pre>
 </section>
 <section id="app" class="hidden">
@@ -65,7 +65,7 @@ button,input,select,textarea{font:inherit}button{border:0;border-radius:11px;pad
 const CATS=['FF NORMAL','FF MAX','TEXTURA','TEMAS / PERSONALIZAÇÃO','WALLPAPERS / FUNDOS','ARQUIVOS','KEYS'];let catalog=[],keys=[];
 const $=id=>document.getElementById(id);
 function apiBase(){return $('base').value.trim().replace(/\/$/,'')}
-async function call(path,method='GET',body){const base=apiBase(),token=$('token').value.trim();if(!/^https:\/\//i.test(base))throw Error('Informe uma URL HTTPS válida.');if(!token)throw Error('Informe o token administrativo.');const r=await fetch(base+path,{method,headers:{'content-type':'application/json','x-admin-token':token},body:body===undefined?undefined:JSON.stringify(body)});const d=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));if(!r.ok)throw Error(d.error||'Falha na solicitação ('+r.status+')');return d}
+async function call(path,method='GET',body){const base=apiBase(),token=$('token').value.trim();if(!/^https:\/\//i.test(base))throw Error('Informe uma URL HTTPS válida.');if(!token)throw Error('Informe a KEY de acesso.');const r=await fetch(base+path,{method,headers:{'content-type':'application/json','x-admin-key':token},body:body===undefined?undefined:JSON.stringify(body)});const d=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));if(!r.ok)throw Error(d.error||'Falha na solicitação ('+r.status+')');return d}
 async function connect(){try{await call('/admin/catalog');$('login').classList.add('hidden');$('app').classList.remove('hidden');await Promise.all([loadCatalog(),loadKeys()])}catch(e){$('loginMsg').textContent=e.message}}
 function logout(){$('app').classList.add('hidden');$('login').classList.remove('hidden');$('token').value=''}
 function showTab(name){document.querySelectorAll('.tabpage').forEach(x=>x.classList.add('hidden'));$(name).classList.remove('hidden');document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===name))}
