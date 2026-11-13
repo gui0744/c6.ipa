@@ -1,0 +1,30 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel de chaves — Yellow Demo</title>
+<style>
+body{margin:0;background:#111;color:#eee;font:16px system-ui;padding:24px;max-width:720px;margin:auto}
+h1{color:#ffd52b}input,button{padding:13px;border-radius:10px;border:1px solid #555;background:#222;color:#fff;margin:5px 0}
+input{width:min(95%,420px)}button{background:#ffd52b;color:#111;font-weight:700;border:0}
+.card{background:#202020;padding:18px;border-radius:16px;margin:16px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.danger{background:#a22;color:white}small{color:#aaa}
+</style>
+<h1>Yellow Demo · Gestão de KEYs</h1>
+<p>Serviço demonstrativo. Não é painel oficial de instituição financeira.</p>
+<div class="card">
+<label>URL do Worker<br><input id="base" placeholder="https://seu-worker.workers.dev"></label><br>
+<label>Token administrativo<br><input id="token" type="password" placeholder="ADMIN_TOKEN"></label><br>
+<label>Validade em dias<br><input id="days" type="number" min="1" max="3650" value="30"></label><br>
+<button onclick="generate()">Gerar KEY</button> <button onclick="refresh()">Listar KEYs</button>
+<button class="danger" onclick="revokeAll()">Revogar todas</button>
+<pre id="out">Configure a URL e o token para começar.</pre>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+async function call(path,method="GET",body){
+ const base=$("base").value.trim().replace(/\/$/,"");
+ const r=await fetch(base+path,{method,headers:{"content-type":"application/json","x-admin-token":$("token").value},body:body?JSON.stringify(body):undefined});
+ const d=await r.json(); if(!r.ok) throw Error(d.error||"Falha na solicitação"); return d;
+}
+async function generate(){try{$("out").textContent=JSON.stringify(await call("/admin/generate","POST",{days:Number($("days").value)}),null,2)}catch(e){$("out").textContent=e.message}}
+async function refresh(){try{$("out").textContent=JSON.stringify(await call("/admin/keys"),null,2)}catch(e){$("out").textContent=e.message}}
+async function revokeAll(){if(!confirm("Revogar TODAS as KEYs?"))return;try{$("out").textContent=JSON.stringify(await call("/admin/revoke-all","POST",{}),null,2)}catch(e){$("out").textContent=e.message}}
+</script></html>
