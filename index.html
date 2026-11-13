@@ -1,30 +1,51 @@
-<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Painel de chaves — Yellow Demo</title>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080808"><title>3105 Yellow • Gerador de Keys</title>
 <style>
-body{margin:0;background:#111;color:#eee;font:16px system-ui;padding:24px;max-width:720px;margin:auto}
-h1{color:#ffd52b}input,button{padding:13px;border-radius:10px;border:1px solid #555;background:#222;color:#fff;margin:5px 0}
-input{width:min(95%,420px)}button{background:#ffd52b;color:#111;font-weight:700;border:0}
-.card{background:#202020;padding:18px;border-radius:16px;margin:16px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}
-.danger{background:#a22;color:white}small{color:#aaa}
+:root{color-scheme:dark;--bg:#080808;--panel:#141414;--line:#292929;--yellow:#f5d21b;--muted:#999}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#29230a 0,transparent 55%),var(--bg);color:#f5f5f5;font:16px Inter,system-ui,sans-serif;display:grid;place-items:center;padding:22px}
+main{width:min(100%,620px)}.brand{font-size:12px;letter-spacing:.22em;color:var(--yellow);font-weight:800;text-transform:uppercase;margin-bottom:18px}
+h1{font-size:clamp(32px,8vw,48px);line-height:1.05;margin:0 0 14px}p{color:var(--muted);line-height:1.6}.panel{display:none;background:rgba(20,20,20,.96);border:1px solid var(--line);border-radius:22px;padding:24px;margin-top:24px;box-shadow:0 20px 70px #0008}.panel.active{display:block}.welcome{padding:28px 0 12px}
+button,.button{border:0;border-radius:12px;padding:14px 18px;background:var(--yellow);color:#111;font-weight:800;font-size:15px;cursor:pointer}
+button.secondary{background:#252525;color:#eee;border:1px solid #393939}button.danger{background:#5b1b1b;color:#fff}
+label{display:block;color:#ddd;font-size:13px;font-weight:650;margin:16px 0 7px}input,select{width:100%;padding:13px 14px;background:#090909;border:1px solid #363636;border-radius:11px;color:#fff;font:inherit}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.actions button{flex:1}.hint{font-size:12px;color:var(--muted)}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#090909;border:1px solid var(--line);border-radius:12px;padding:14px;min-height:50px;color:#ddd}.hidden{display:none!important}.file{padding:16px;border:1px dashed #555;border-radius:12px;background:#0c0c0c}.top{display:flex;align-items:center;justify-content:space-between;gap:12px}.top b{color:var(--yellow)}.status{font-size:12px;color:var(--muted)}
 </style>
-<h1>Yellow Demo · Gestão de KEYs</h1>
-<p>Serviço demonstrativo. Não é painel oficial de instituição financeira.</p>
-<div class="card">
-<label>URL do Worker<br><input id="base" placeholder="https://seu-worker.workers.dev"></label><br>
-<label>Token administrativo<br><input id="token" type="password" placeholder="ADMIN_TOKEN"></label><br>
-<label>Validade em dias<br><input id="days" type="number" min="1" max="3650" value="30"></label><br>
-<button onclick="generate()">Gerar KEY</button> <button onclick="refresh()">Listar KEYs</button>
-<button class="danger" onclick="revokeAll()">Revogar todas</button>
-<pre id="out">Configure a URL e o token para começar.</pre>
-</div>
+</head>
+<body><main>
+<div class="brand">3105 Yellow • Access</div>
+<section id="welcome" class="welcome">
+<h1>Seja bem-vindo<br>ao gerador!</h1>
+<p>Gere chaves de acesso para o painel do 3105 Yellow e gerencie as configurações do aplicativo em um só lugar.</p>
+<button onclick="enter()">Entrar no gerador <span aria-hidden="true">→</span></button>
+</section>
+<section id="generator" class="panel">
+<div class="top"><b>GERADOR DE KEYS</b><span class="status">PAINEL ADMINISTRATIVO</span></div>
+<label for="base">Endereço do 3105 Server</label><input id="base" type="url" placeholder="https://seu-worker.workers.dev">
+<label for="token">Token administrativo</label><input id="token" type="password" autocomplete="current-password" placeholder="Seu token de administrador">
+<label for="days">Validade da KEY</label><select id="days"><option value="1">1 dia</option><option value="3">3 dias</option><option value="7">7 dias</option><option value="15">15 dias</option><option value="30" selected>30 dias</option></select>
+<div class="actions"><button onclick="generate()">Gerar KEY</button><button class="secondary" onclick="refresh()">Atualizar lista</button></div>
+<pre id="out" aria-live="polite">Configure o servidor e o token para começar.</pre>
+<label for="configFile">Enviar arquivo de configuração para o 3105</label>
+<div class="file"><input id="configFile" type="file" accept=".json,application/json"><p class="hint">Envie somente um JSON de configuração do 3105 (máximo 64 KB). O site não executa nem injeta código binário.</p><button class="secondary" onclick="uploadConfig()">Enviar configuração</button></div>
+<div class="actions"><button class="danger" onclick="revokeAll()">Revogar todas as KEYS</button><button class="secondary" onclick="leave()">Sair</button></div>
+</section>
+</main>
 <script>
 const $=id=>document.getElementById(id);
+function enter(){$("welcome").classList.add("hidden");$("generator").classList.add("active")}
+function leave(){$("generator").classList.remove("active");$("welcome").classList.remove("hidden")}
 async function call(path,method="GET",body){
  const base=$("base").value.trim().replace(/\/$/,"");
- const r=await fetch(base+path,{method,headers:{"content-type":"application/json","x-admin-token":$("token").value},body:body?JSON.stringify(body):undefined});
- const d=await r.json(); if(!r.ok) throw Error(d.error||"Falha na solicitação"); return d;
+ if(!/^https:\/\//i.test(base))throw Error("Informe a URL HTTPS do 3105 Server.");
+ const token=$("token").value.trim();if(!token)throw Error("Informe o token administrativo.");
+ const r=await fetch(base+path,{method,headers:{"content-type":"application/json","x-admin-token":token},body:body===undefined?undefined:JSON.stringify(body)});
+ const d=await r.json().catch(()=>({error:"Resposta inválida do servidor"}));if(!r.ok)throw Error(d.error||"Falha na solicitação");return d;
 }
-async function generate(){try{$("out").textContent=JSON.stringify(await call("/admin/generate","POST",{days:Number($("days").value)}),null,2)}catch(e){$("out").textContent=e.message}}
-async function refresh(){try{$("out").textContent=JSON.stringify(await call("/admin/keys"),null,2)}catch(e){$("out").textContent=e.message}}
-async function revokeAll(){if(!confirm("Revogar TODAS as KEYs?"))return;try{$("out").textContent=JSON.stringify(await call("/admin/revoke-all","POST",{}),null,2)}catch(e){$("out").textContent=e.message}}
-</script></html>
+async function generate(){try{const d=await call("/admin/generate","POST",{days:Number($("days").value)});$("out").textContent="KEY GERADA\n"+d.key+"\nExpira em: "+new Date(d.expiresAt).toLocaleString("pt-BR");}catch(e){$("out").textContent=e.message}}
+async function refresh(){try{const d=await call("/admin/keys");$("out").textContent=(d.keys||[]).map(k=>k.key+" • "+(k.revoked?"REVOGADA":Date.now()>k.expiresAt?"EXPIRADA":"ATIVA")+" • expira "+new Date(k.expiresAt).toLocaleDateString("pt-BR")).join("\n")||"Nenhuma KEY criada ainda."}catch(e){$("out").textContent=e.message}}
+async function revokeAll(){if(!confirm("Tem certeza que deseja revogar todas as KEYS?"))return;try{const d=await call("/admin/revoke-all","POST",{});$("out").textContent="KE意YS revogadas: "+d.revoked}catch(e){$("out").textContent=e.message}}
+async function uploadConfig(){const f=$("configFile").files[0];if(!f){$("out").textContent="Escolha um arquivo JSON primeiro.";return}if(f.size>65536){$("out").textContent="O arquivo ultrapassa 64 KB.";return}try{if(!f.name.toLowerCase().endsWith(".json"))throw Error("Envie apenas arquivos .json.");const config=JSON.parse(await f.text());if(!config||Array.isArray(config)||typeof config!=="object")throw Error("O JSON precisa conter um objeto de configuração.");const d=await call("/admin/config-upload","POST",{name:f.name,config});$("out").textContent="Configuração enviada ao 3105 Server.\nID: "+d.id+"\nA IPA precisa ter o leitor de configurações habilitado para aplicar esses ajustes."}catch(e){$("out").textContent=e.message}}
+</script></body></html>
