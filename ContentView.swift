@@ -27,7 +27,7 @@ struct ContentView: View {
             }
         }
         .tint(yellow)
-        .onChange(of: selectedPhoto) { _, item in
+        .onChange(of: selectedPhoto) { item in
             Task {
                 if let data = try? await item?.loadTransferable(type: Data.self),
                    let image = UIImage(data: data) { profileImage = image }
