@@ -6,6 +6,7 @@ function json(data, status=200) {
     "access-control-allow-methods":"GET,POST,OPTIONS"
   }});
 }
+const CATEGORIES = ["FF NORMAL","FF MAX","TEXTURA","TEMAS / PERSONALIZAÇÃO","WALLPAPERS / FUNDOS","ARQUIVOS","KEYS"];
 function randomKey() {
   const a = crypto.randomUUID().replaceAll("-","").toUpperCase();
   return "3105-" + a.slice(0,4) + "-" + a.slice(4,8) + "-" + a.slice(8,12);
@@ -18,6 +19,18 @@ async function validKey(env, key) {
   if (data.revoked || !data.expiresAt || Date.now() > data.expiresAt) return null;
   return data;
 }
+async function catalogItems(env, includeHidden=false) {
+  const listed = await env.KEYS.list({prefix:"catalog:item:"});
+  const items = await Promise.all(listed.keys.map(async entry => {
+    const raw = await env.KEYS.get(entry.name);
+    return raw ? JSON.parse(raw) : null;
+  }));
+  return items.filter(x => x && (includeHidden || x.active !== false));
+}
+function safeHttps(value) {
+  if (!value) return true;
+  try { return new URL(value).protocol === "https:"; } catch { return false; }
+}
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
@@ -26,6 +39,15 @@ export default {
       const {key} = await req.json().catch(()=>({}));
       const data = await validKey(env,key);
       return json(data ? {valid:true,expiresAt:data.expiresAt} : {valid:false,message:"KEY inválida, expirada ou revogada"});
+    }
+    if (url.pathname === "/catalog" && req.method === "GET") {
+      return json({items:await catalogItems(env,false)});
+    }
+    if (url.pathname === "/config" && req.method === "GET") {
+      const id = await env.KEYS.get("config:latest");
+      if (!id) return json({config:null});
+      const record = await env.KEYS.get("config:"+id);
+      return record ? json(JSON.parse(record)) : json({config:null});
     }
     if (!url.pathname.startsWith("/admin/")) return json({error:"Not found"},404);
     if (!env.ADMIN_TOKEN || req.headers.get("x-admin-token") !== env.ADMIN_TOKEN)
@@ -48,6 +70,7 @@ export default {
     }
     if (url.pathname === "/admin/revoke" && req.method === "POST") {
       const {key} = await req.json().catch(()=>({}));
+      if (!key) return json({error:"Informe a KEY."},400);
       const value = await env.KEYS.get(key);
       if (!value) return json({error:"KEY não encontrada"},404);
       const data=JSON.parse(value);data.revoked=true;
@@ -60,6 +83,32 @@ export default {
         await env.KEYS.put(k.name,JSON.stringify(data));
       }));
       return json({ok:true,revoked:list.keys.length});
+    }
+    if (url.pathname === "/admin/catalog" && req.method === "GET") {
+      return json({items:await catalogItems(env,true)});
+    }
+    if (url.pathname === "/admin/catalog-save" && req.method === "POST") {
+      const body=await req.json().catch(()=>null);
+      if (!body || typeof body !== "object" || Array.isArray(body))
+        return json({error:"Dados do item inválidos."},400);
+      const category=String(body.category||"");
+      const name=String(body.name||"").trim();
+      const description=String(body.description||"").trim();
+      const imageUrl=String(body.imageUrl||"").trim();
+      const fileUrl=String(body.url||"").trim();
+      if (!CATEGORIES.includes(category)) return json({error:"Categoria inválida."},400);
+      if (!name || name.length>80 || description.length>500) return json({error:"Nome obrigatório (até 80 caracteres) e descrição de até 500 caracteres."},400);
+      if (!safeHttps(imageUrl) || !safeHttps(fileUrl)) return json({error:"Os links devem usar HTTPS."},400);
+      const id=body.id && /^[a-zA-Z0-9-]{1,64}$/.test(body.id) ? body.id : crypto.randomUUID();
+      const item={id,category,name,description,imageUrl,url:fileUrl,active:body.active!==false,updatedAt:Date.now()};
+      await env.KEYS.put("catalog:item:"+id,JSON.stringify(item));
+      return json({ok:true,item});
+    }
+    if (url.pathname === "/admin/catalog-delete" && req.method === "POST") {
+      const {id}=await req.json().catch(()=>({}));
+      if (!id || !/^[a-zA-Z0-9-]{1,64}$/.test(id)) return json({error:"ID inválido."},400);
+      await env.KEYS.delete("catalog:item:"+id);
+      return json({ok:true});
     }
     if (url.pathname === "/admin/config-upload" && req.method === "POST") {
       const body=await req.json().catch(()=>null);
