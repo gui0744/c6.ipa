@@ -2,7 +2,7 @@ function json(data, status=200) {
   return new Response(JSON.stringify(data), {status, headers: {
     "content-type":"application/json",
     "access-control-allow-origin":"*",
-    "access-control-allow-headers":"content-type,x-admin-token",
+    "access-control-allow-headers":"content-type,x-admin-key",
     "access-control-allow-methods":"GET,POST,OPTIONS"
   }});
 }
@@ -50,7 +50,7 @@ export default {
       return record ? json(JSON.parse(record)) : json({config:null});
     }
     if (!url.pathname.startsWith("/admin/")) return json({error:"Not found"},404);
-    if (!env.ADMIN_TOKEN || req.headers.get("x-admin-token") !== env.ADMIN_TOKEN)
+    if (!env.ADMIN_KEY || req.headers.get("x-admin-key") !== env.ADMIN_KEY)
       return json({error:"Unauthorized"},401);
 
     if (url.pathname === "/admin/generate" && req.method === "POST") {
