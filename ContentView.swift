@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var investmentUnlocked = false
     @State private var status = ""
     @State private var selectedTab = 0
+    @State private var showPatches = false
 
     private let yellow = Color(red: 1.0, green: 0.82, blue: 0.12)
 
@@ -121,6 +122,20 @@ struct ContentView: View {
                         quickTile("Extrato", "doc.text")
                     }
 
+                    Button { showPatches = true } label: {
+                        HStack(spacing: 14) {
+                            Image(systemName: "square.grid.2x2.fill").font(.title2)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("PATCHES 3105").font(.headline)
+                                Text("FF Normal • FF Max • Texturas • Temas • Arquivos").font(.caption).foregroundStyle(.black.opacity(0.7))
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                        }
+                        .foregroundStyle(.black).padding(18)
+                        .background(yellow, in: RoundedRectangle(cornerRadius: 18))
+                    }
+
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Pix").font(.title3.weight(.semibold))
                         HStack {
@@ -164,6 +179,9 @@ struct ContentView: View {
         .sheet(isPresented: Binding(get: { selectedTab == 2 && investmentUnlocked },
                                     set: { if !$0 { selectedTab = 0 } })) {
             InvestmentDemoView().preferredColorScheme(.dark)
+        }
+        .sheet(isPresented: $showPatches) {
+            PatchCatalogView()
         }
     }
 
