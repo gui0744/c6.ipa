@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "theme": "black-yellow",
+  "features": {
+    "esp": false,
+    "espLine": false,
+    "espBox": false,
+    "espSkeleton": false,
+    "espDistance": false,
+    "fovOverlay": true,
+    "aimAssistDemo": false
+  },
+  "visual": {
+    "fov": 90,
+    "aimFov": 60,
+    "smooth": 5,
+    "target": "nearest"
+  },
+  "gesture": {
+    "touches": 4,
+    "taps": 1
+  }
+}
