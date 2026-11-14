@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080808">
+  <title>3105 Yellow • Gerador de Keys</title>
+  <style>
+    :root{color-scheme:dark;--bg:#080808;--panel:#141414;--line:#2b2b2b;--yellow:#f5d21b;--muted:#a4a4a4;--red:#ff7373;--green:#76d6a0}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -18%,#332a08 0,transparent 55%),var(--bg);color:#f7f7f7;font:15px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    button,input,select{font:inherit}
+    .shell{width:min(960px,100%);margin:0 auto;padding:28px 18px 56px}
+    header{padding:22px 0 18px}
+    .brand{color:var(--yellow);font-size:12px;font-weight:900;letter-spacing:.24em;text-transform:uppercase}
+    h1{font-size:clamp(30px,6vw,48px);line-height:1.06;margin:12px 0 8px}
+    .welcome{color:var(--yellow);font-size:clamp(18px,3vw,22px);font-weight:750;margin:0 0 8px}
+    .muted{color:var(--muted);line-height:1.55}
+    .status{display:flex;align-items:center;gap:10px;padding:13px 15px;border:1px solid var(--line);border-radius:13px;background:#101010;margin:12px 0 20px}
+    .dot{width:9px;height:9px;border-radius:50%;background:#777;flex:none}
+    .dot.online{background:var(--green);box-shadow:0 0 12px #76d6a055}
+    .dot.offline{background:var(--red)}
+    .card{background:rgba(20,20,20,.96);border:1px solid var(--line);border-radius:18px;padding:20px;margin:16px 0;box-shadow:0 14px 40px #0005}
+    h2{font-size:19px;margin:0 0 12px}
+    label{display:block;color:#ddd;font-size:12px;font-weight:750;margin:13px 0 6px}
+    input,select{width:100%;padding:12px 13px;background:#090909;border:1px solid #3a3a3a;border-radius:10px;color:#fff;min-height:45px}
+    input:focus,select:focus,button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+    button{border:0;border-radius:11px;padding:12px 16px;background:var(--yellow);color:#111;font-weight:850;cursor:pointer}
+    button.secondary{background:#252525;color:#eee;border:1px solid #3a3a3a}
+    button.danger{background:#5b1b1b;color:#fff}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    .row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+    .row .grow{flex:1;min-width:180px}
+    .row button{min-height:45px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .hidden{display:none!important}
+    .message{margin:12px 0 0;padding:11px 12px;border-radius:10px;background:#0a0a0a;border:1px solid #303030;color:#ddd;white-space:pre-wrap;overflow-wrap:anywhere;min-height:42px}
+    .message.error{border-color:#743636;color:#ffb0b0}
+    .message.success{border-color:#315d43;color:#b7f0cc}
+    .key-list{display:grid;gap:9px;margin-top:12px}
+    .key-item{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:13px;background:#0a0a0a;border:1px solid #2c2c2c;border-radius:12px}
+    .key-value{font-weight:850;letter-spacing:.05em;overflow-wrap:anywhere}
+    .key-meta{font-size:12px;color:var(--muted);margin-top:5px}
+    .key-actions{display:flex;gap:8px}
+    .key-actions button{padding:9px 11px;font-size:12px}
+    .hint{font-size:12px;color:var(--muted);line-height:1.5;margin:9px 0 0}
+    .footer{color:#777;font-size:12px;text-align:center;padding-top:16px}
+    @media(max-width:680px){.grid{grid-template-columns:1fr}.card{padding:16px}.shell{padding:18px 14px 40px}.row button{width:100%}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand">3105 Yellow • Key Center</div>
+      <h1>Gerador de Keys</h1>
+      <p class="welcome">Seja bem-vindo ao gerador!</p>
+      <p class="muted">Gere, consulte e revogue chaves com validação online pelo 3105 Server.</p>
+    </header>
+
+    <div class="status" role="status" aria-live="polite">
+      <span id="serviceDot" class="dot"></span>
+      <span id="serviceStatus">Verificando conexão com o 3105 Server…</span>
+    </div>
+
+    <section class="card" aria-labelledby="validateTitle">
+      <h2 id="validateTitle">Validar KEY online</h2>
+      <p class="muted">A validação consulta o servidor em tempo real e considera validade e revogação.</p>
+      <div class="row">
+        <div class="grow">
+          <label for="validateKey">KEY</label>
+          <input id="validateKey" autocomplete="off" spellcheck="false" placeholder="3105-XXXX-XXXX-…" maxlength="80">
+        </div>
+        <button id="validateButton" type="button">Validar KEY</button>
+      </div>
+      <div id="validateMessage" class="message" aria-live="polite">Aguardando uma KEY.</div>
+    </section>
+
+    <section class="card" aria-labelledby="loginTitle">
+      <h2 id="loginTitle">Acesso administrativo</h2>
+      <p class="muted">A KEY administrativa é validada pelo servidor. Ela fica somente na memória desta página e não é salva no navegador.</p>
+      <label for="adminKey">Segredo administrativo</label>
+      <input id="adminKey" type="password" autocomplete="current-password" placeholder="Digite a chave administrativa">
+      <div class="row" style="margin-top:12px">
+        <button id="loginButton" type="button">Entrar no painel</button>
+        <button id="logoutButton" class="secondary hidden" type="button">Sair</button>
+      </div>
+      <div id="loginMessage" class="message" aria-live="polite">O painel exige autenticação administrativa.</div>
+    </section>
+
+    <section id="adminPanel" class="hidden">
+      <div class="grid">
+        <section class="card" aria-labelledby="generateTitle">
+          <h2 id="generateTitle">Gerar nova KEY</h2>
+          <label for="days">Validade em dias (1 a 30)</label>
+          <input id="days" type="number" min="1" max="30" step="1" value="30" inputmode="numeric">
+          <button id="generateButton" type="button" style="width:100%;margin-top:12px">Gerar KEY</button>
+          <div id="generateMessage" class="message" aria-live="polite">Nenhuma KEY gerada nesta sessão.</div>
+          <p class="hint">O servidor também valida o limite: somente números inteiros de 1 a 30 dias.</p>
+        </section>
+
+        <section class="card" aria-labelledby="uploadTitle">
+          <h2 id="uploadTitle">Enviar configuração JSON</h2>
+          <p class="muted">Somente objeto JSON de configuração, até 64 KB. Arquivos binários, scripts e propriedades fora do esquema permitido são rejeitados.</p>
+          <label for="configFile">Arquivo .json</label>
+          <input id="configFile" type="file" accept=".json,application/json">
+          <button id="uploadButton" type="button" style="width:100%;margin-top:12px">Enviar JSON</button>
+          <div id="uploadMessage" class="message" aria-live="polite">Nenhum arquivo enviado.</div>
+        </section>
+      </div>
+
+      <section class="card" aria-labelledby="keysTitle">
+        <div class="row" style="align-items:center">
+          <div class="grow"><h2 id="keysTitle" style="margin:0">KEYs cadastradas</h2><p class="hint">A lista mostra chaves ativas, expiradas e revogadas.</p></div>
+          <button id="refreshButton" class="secondary" type="button">Atualizar lista</button>
+        </div>
+        <div id="keysList" class="key-list"><p class="muted">Entre no painel para carregar as KEYs.</p></div>
+        <div id="keysMessage" class="message hidden" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <p class="footer">3105 Yellow • O servidor nunca executa configurações enviadas como código.</p>
+  </main>
+
+  <script>
+    "use strict";
+    let serviceBase = "";
+    let adminToken = "";
+
+    const $ = (id) => document.getElementById(id);
+    const setMessage = (id, message, kind = "") => {
+      const el = $(id);
+      el.textContent = message;
+      el.className = "message" + (kind ? " " + kind : "");
+    };
+    const setServiceState = (online, message) => {
+      $("serviceDot").className = "dot " + (online ? "online" : "offline");
+      $("serviceStatus").textContent = message;
+    };
+    const requireService = () => {
+      if (!serviceBase) throw new Error("O endereço HTTPS do 3105 Server ainda não foi configurado.");
+    };
+    async function api(path, method = "GET", body, admin = false) {
+      requireService();
+      const headers = { "Accept": "application/json" };
+      if (body !== undefined) headers["Content-Type"] = "application/json";
+      if (admin) {
+        if (!adminToken) throw new Error("Entre no painel administrativo primeiro.");
+        headers["x-admin-key"] = adminToken;
+      }
+      const response = await fetch(serviceBase + path, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        cache: "no-store"
+      });
+      const data = await response.json().catch(() => ({ error: "Resposta inválida do servidor." }));
+      if (!response.ok) throw new Error(data.error || ("Falha na solicitação (" + response.status + ")."));
+      return data;
+    }
+
+    async function loadService() {
+      try {
+        const response = await fetch("/api/config", { cache: "no-store" });
+        if (!response.ok) throw new Error("Não foi possível ler a configuração do site.");
+        const config = await response.json();
+        const candidate = typeof config.serviceUrl === "string" ? config.serviceUrl.trim() : "";
+        if (!candidate) {
+          serviceBase = "";
+          setServiceState(false, "3105 Server não configurado. Defina KEY_SERVICE_URL no Vercel após publicar o Worker.");
+          return;
+        }
+        const parsed = new URL(candidate);
+        if (parsed.protocol !== "https:" || parsed.username || parsed.password) throw new Error("A URL do serviço precisa ser HTTPS.");
+        serviceBase = parsed.href.replace(/\/+$/, "");
+        const health = await api("/health");
+        setServiceState(Boolean(health.ok && health.kvConfigured), health.kvConfigured ? "Conectado ao 3105 Server." : "Worker encontrado, mas o KV ainda não está configurado.");
+      } catch (error) {
+        serviceBase = "";
+        setServiceState(false, error.message || "Não foi possível conectar ao 3105 Server.");
+      }
+    }
+
+    async function validateKey() {
+      const key = $("validateKey").value.trim();
+      if (!key) return setMessage("validateMessage", "Informe uma KEY.", "error");
+      try {
+        const result = await api("/validate", "POST", { key });
+        if (result.valid) {
+          const expiry = result.expiresAt ? new Date(result.expiresAt).toLocaleString("pt-BR") : "não informado";
+          setMessage("validateMessage", "KEY válida. Expira em: " + expiry, "success");
+        } else {
+          setMessage("validateMessage", result.message || "KEY inválida, expirada ou revogada.", "error");
+        }
+      } catch (error) {
+        setMessage("validateMessage", error.message, "error");
+      }
+    }
+
+    async function login() {
+      const candidate = $("adminKey").value.trim();
+      if (!candidate) return setMessage("loginMessage", "Informe o segredo administrativo.", "error");
+      try {
+        requireService();
+        const response = await fetch(serviceBase + "/admin/keys", {
+          headers: { "Accept": "application/json", "x-admin-key": candidate },
+          cache: "no-store"
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Acesso administrativo recusado.");
+        adminToken = candidate;
+        $("adminKey").value = "";
+        $("adminPanel").classList.remove("hidden");
+        $("loginButton").classList.add("hidden");
+        $("logoutButton").classList.remove("hidden");
+        setMessage("loginMessage", "Acesso administrativo autorizado.", "success");
+        renderKeys(data.keys || []);
+      } catch (error) {
+        adminToken = "";
+        setMessage("loginMessage", error.message, "error");
+      }
+    }
+
+    function logout() {
+      adminToken = "";
+      $("adminPanel").classList.add("hidden");
+      $("loginButton").classList.remove("hidden");
+      $("logoutButton").classList.add("hidden");
+      $("adminKey").value = "";
+      $("keysList").replaceChildren(document.createTextNode("Entre no painel para carregar as KEYs."));
+      setMessage("loginMessage", "Sessão administrativa encerrada.");
+    }
+
+    function renderKeys(keys) {
+      const list = $("keysList");
+      list.replaceChildren();
+      if (!keys.length) {
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "Nenhuma KEY cadastrada.";
+        list.append(empty);
+        return;
+      }
+      for (const item of keys) {
+        const row = document.createElement("article");
+        row.className = "key-item";
+        const details = document.createElement("div");
+        details.style.minWidth = "220px";
+        const value = document.createElement("div");
+        value.className = "key-value";
+        value.textContent = String(item.key || "");
+        const meta = document.createElement("div");
+        meta.className = "key-meta";
+        const expired = !item.expiresAt || Date.now() >= Number(item.expiresAt);
+        const status = item.revoked ? "REVOGADA" : (expired ? "EXPIRADA" : "ATIVA");
+        const expires = item.expiresAt ? new Date(Number(item.expiresAt)).toLocaleString("pt-BR") : "sem validade";
+        meta.textContent = status + " • expira " + expires;
+        details.append(value, meta);
+        const actions = document.createElement("div");
+        actions.className = "key-actions";
+        const revoke = document.createElement("button");
+        revoke.type = "button";
+        revoke.className = "danger";
+        revoke.textContent = item.revoked ? "Revogada" : "Revogar";
+        revoke.disabled = Boolean(item.revoked);
+        revoke.addEventListener("click", () => revokeKey(String(item.key || "")));
+        actions.append(revoke);
+        row.append(details, actions);
+        list.append(row);
+      }
+    }
+
+    async function refreshKeys() {
+      try {
+        const data = await api("/admin/keys", "GET", undefined, true);
+        renderKeys(data.keys || []);
+        setMessage("keysMessage", "Lista atualizada.", "success");
+      } catch (error) {
+        setMessage("keysMessage", error.message, "error");
+      }
+    }
+
+    async function generateKey() {
+      const days = Number($("days").value);
+      if (!Number.isInteger(days) || days < 1 || days > 30) {
+        return setMessage("generateMessage", "A validade precisa ser um número inteiro entre 1 e 30 dias.", "error");
+      }
+      try {
+        const result = await api("/admin/generate", "POST", { days }, true);
+        const expiry = new Date(result.expiresAt).toLocaleString("pt-BR");
+        setMessage("generateMessage", "KEY gerada:\n" + result.key + "\nExpira em: " + expiry, "success");
+        await refreshKeys();
+      } catch (error) {
+        setMessage("generateMessage", error.message, "error");
+      }
+    }
+
+    async function revokeKey(key) {
+      if (!key || !window.confirm("Revogar esta KEY?")) return;
+      try {
+        await api("/admin/revoke", "POST", { key }, true);
+        setMessage("keysMessage", "KEY revogada.", "success");
+        await refreshKeys();
+      } catch (error) {
+        setMessage("keysMessage", error.message, "error");
+      }
+    }
+
+    async function uploadConfig() {
+      const file = $("configFile").files && $("configFile").files[0];
+      if (!file) return setMessage("uploadMessage", "Escolha um arquivo .json.", "error");
+      try {
+        if (!file.name.toLowerCase().endsWith(".json")) throw new Error("Somente arquivos com extensão .json são aceitos.");
+        if (file.type && file.type.toLowerCase() !== "application/json") throw new Error("O tipo MIME precisa ser application/json.");
+        if (file.size > 65536) throw new Error("O arquivo ultrapassa 64 KB.");
+        const config = JSON.parse(await file.text());
+        if (!config || typeof config !== "object" || Array.isArray(config)) throw new Error("O arquivo precisa conter um objeto JSON.");
+        const result = await api("/admin/config-upload", "POST", { name: file.name, config }, true);
+        setMessage("uploadMessage", "Configuração JSON recebida. ID: " + result.id, "success");
+        $("configFile").value = "";
+      } catch (error) {
+        setMessage("uploadMessage", error.message, "error");
+      }
+    }
+
+    $("validateButton").addEventListener("click", validateKey);
+    $("loginButton").addEventListener("click", login);
+    $("logoutButton").addEventListener("click", logout);
+    $("generateButton").addEventListener("click", generateKey);
+    $("refreshButton").addEventListener("click", refreshKeys);
+    $("uploadButton").addEventListener("click", uploadConfig);
+    $("validateKey").addEventListener("keydown", event => { if (event.key === "Enter") validateKey(); });
+    $("adminKey").addEventListener("keydown", event => { if (event.key === "Enter") login(); });
+    loadService();
+  </script>
+</body>
+</html>
