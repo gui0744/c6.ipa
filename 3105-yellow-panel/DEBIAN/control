@@ -1,0 +1,9 @@
+Package: com.3105yellow.panel
+Name: 3105 Yellow Panel
+Version: 0.1.0
+Architecture: iphoneos-arm64
+Description: Painel de configuracao 3105 Yellow (interface e preferencias)
+Maintainer: 3105 Yellow
+Author: 3105 Yellow
+Section: Tweaks
+Priority: optional
