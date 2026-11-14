@@ -1,0 +1,12 @@
+name = "3105-yellow-key-service"
+main = "worker.js"
+compatibility_date = "2026-11-14"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://3105-yellow-admin.vercel.app"
+
+# Depois de criar o namespace no Cloudflare, adicione o binding real:
+# [[kv_namespaces]]
+# binding = "KEYS"
+# id = "COLE_AQUI_O_ID_REAL_DO_NAMESPACE"
